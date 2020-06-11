@@ -9,21 +9,29 @@ import {
   LOGIN_FAIL,
   LOGOUT_SUCCESS,
   REGISTER_SUCCESS,
-  REGISTER_FAIL
+  REGISTER_FAIL,
+  ROLE_CREATION_SUCCESS,
+  ROLE_CREATION_FAIL
+
 } from './types';
 
 // Check token & load user
 export const loadUser = () => (dispatch, getState) => {
   // User loading
   dispatch({ type: USER_LOADING });
-
+  const token = localStorage.getItem("token");
+  if(token == null){
+    dispatch(logout());
+    return;
+  }
   axios
     .get('/api/auth/user', tokenConfig(getState))
-    .then(res =>
+    .then(res =>{
       dispatch({
         type: USER_LOADED,
         payload: res.data
       })
+    }
     )
     .catch(err => {
       dispatch(returnErrors(err.response.data, err.response.status));
@@ -33,8 +41,8 @@ export const loadUser = () => (dispatch, getState) => {
     });
 };
 
-// Register User
-export const register = ({ name, email, userType, password }) => dispatch => {
+// Register User  //should be private to the admin
+export const register = ({ name, email, userType, password }) => (dispatch, getState) => {
   // Headers
   const config = {
     headers: {
@@ -46,7 +54,7 @@ export const register = ({ name, email, userType, password }) => dispatch => {
   const body = JSON.stringify({ name, email, userType, password });
 
   axios
-    .post('/api/users', body, config)
+    .post('/api/users', body, tokenConfig(getState))
     .then(res =>
       dispatch({
         type: REGISTER_SUCCESS,
@@ -62,7 +70,6 @@ export const register = ({ name, email, userType, password }) => dispatch => {
       });
     });
 };
-
 // Login User
 export const login = ({ email, password }) => dispatch => {
   // Headers
@@ -119,3 +126,4 @@ export const tokenConfig = getState => {
 
   return config;
 };
+
